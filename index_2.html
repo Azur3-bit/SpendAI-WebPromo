@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpendAI — AI Financial Advisor & Expense Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #030712;
+  --bg2: #060d1f;
+  --surface: rgba(255,255,255,0.03);
+  --border: rgba(255,255,255,0.07);
+  --border-glow: rgba(0,212,255,0.25);
+  --cyan: #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.12);
+  --gold: #f5a623;
+  --gold-dim: rgba(245,166,35,0.12);
+  --green: #00e5a0;
+  --text: #e8eaf2;
+  --text-muted: rgba(232,234,242,0.45);
+  --text-dim: rgba(232,234,242,0.22);
+  --r: 16px;
+  --r-lg: 24px;
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ---- CUSTOM CURSOR ---- */
+#cursor{
+  position:fixed;width:12px;height:12px;
+  background:var(--cyan);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  transition:width .2s,height .2s,background .2s,opacity .2s;
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;
+  border:1px solid rgba(0,212,255,0.4);
+  border-radius:50%;pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:transform .12s ease,width .2s,height .2s,opacity .2s;
+}
+body:has(a:hover) #cursor{width:20px;height:20px;background:var(--gold)}
+body:has(a:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(245,166,35,0.5)}
+
+/* ---- NOISE + BACKGROUND ---- */
+.noise{
+  position:fixed;inset:0;pointer-events:none;z-index:1;
+  opacity:.025;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:256px;
+}
+.aurora{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.aurora::before{
+  content:'';position:absolute;
+  width:900px;height:600px;top:-200px;left:-200px;
+  background:radial-gradient(ellipse,rgba(0,100,180,0.12) 0%,transparent 70%);
+  animation:auroraMove 20s ease-in-out infinite alternate;
+}
+.aurora::after{
+  content:'';position:absolute;
+  width:700px;height:500px;bottom:-100px;right:-100px;
+  background:radial-gradient(ellipse,rgba(0,180,120,0.08) 0%,transparent 70%);
+  animation:auroraMove2 25s ease-in-out infinite alternate;
+}
+@keyframes auroraMove{0%{transform:translate(0,0) scale(1)}100%{transform:translate(200px,100px) scale(1.3)}}
+@keyframes auroraMove2{0%{transform:translate(0,0)}100%{transform:translate(-150px,-80px) scale(1.2)}}
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:4px}
+
+/* ---- SELECTION ---- */
+::selection{background:rgba(0,212,255,0.2);color:var(--cyan)}
+
+/* ---- NAV ---- */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:20px 40px;
+  display:flex;justify-content:space-between;align-items:center;
+  backdrop-filter:blur(20px) saturate(1.5);
+  background:rgba(3,7,18,0.7);
+  border-bottom:1px solid var(--border);
+  transition:padding .3s;
+}
+nav.scrolled{padding:14px 40px}
+.nav-logo{
+  font-family:var(--font-display);font-size:22px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-decoration:none;
+}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{
+  font-size:13px;font-weight:500;color:var(--text-muted);
+  text-decoration:none;letter-spacing:.06em;text-transform:uppercase;
+  transition:color .2s;
+}
+.nav-links a:hover{color:var(--cyan)}
+.nav-cta{
+  background:linear-gradient(135deg,var(--cyan),#0099cc);
+  color:#000;font-weight:700;font-size:13px;
+  padding:10px 22px;border-radius:100px;text-decoration:none;
+  letter-spacing:.04em;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 0 24px rgba(0,212,255,0.3);
+}
+.nav-cta:hover{transform:scale(1.05);box-shadow:0 0 40px rgba(0,212,255,0.5)}
+
+/* ---- SECTION BASE ---- */
+section{position:relative;z-index:2}
+.container{max-width:1200px;margin:0 auto;padding:0 40px}
+
+/* ---- CHIP/BADGE ---- */
+.chip{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border-radius:100px;
+  border:1px solid var(--border-glow);
+  background:var(--cyan-dim);
+  font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan);font-family:var(--font-mono);
+  margin-bottom:24px;
+}
+.chip .dot{
+  width:6px;height:6px;background:var(--cyan);border-radius:50%;
+  animation:pulse-dot 2s infinite;
+}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.7)}}
+
+/* ---- HERO ---- */
+#hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:120px 0 80px;overflow:hidden;position:relative;
+}
+.hero-grid-bg{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 0%,transparent 100%);
+}
+.hero-inner{
+  display:grid;grid-template-columns:1fr 1fr;gap:80px;
+  align-items:center;
+}
+.hero-left .label{
+  font-family:var(--font-mono);font-size:11px;color:var(--cyan);
+  letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:20px;display:flex;align-items:center;gap:10px;
+}
+.hero-left .label::before{
+  content:'';width:24px;height:1px;background:var(--cyan);display:block;
+}
+h1{
+  font-family:var(--font-display);
+  font-size:clamp(42px,5vw,72px);
+  font-weight:800;line-height:1.05;
+  letter-spacing:-.03em;
+  margin-bottom:24px;
+}
+h1 .gradient{
+  background:linear-gradient(135deg,var(--cyan) 0%,#00aaff 40%,var(--gold) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-desc{
+  font-size:17px;color:var(--text-muted);line-height:1.7;
+  margin-bottom:40px;max-width:480px;
+}
+.hero-tags{
+  display:flex;flex-wrap:wrap;gap:10px;margin-bottom:40px;
+}
+.hero-tag{
+  padding:7px 16px;border-radius:100px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  font-size:12px;color:var(--text-muted);
+  display:flex;align-items:center;gap:6px;
+  transition:border-color .2s,color .2s;
+}
+.hero-tag:hover{border-color:var(--border-glow);color:var(--text)}
+.hero-tag .icon{font-size:14px}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap}
+.btn-primary{
+  background:linear-gradient(135deg,var(--cyan),#0099cc);
+  color:#000;font-weight:700;font-size:14px;
+  padding:14px 32px;border-radius:100px;text-decoration:none;
+  transition:transform .2s,box-shadow .2s;
+  box-shadow:0 0 30px rgba(0,212,255,0.35);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(0,212,255,0.5)}
+.btn-secondary{
+  background:transparent;color:var(--text);font-weight:500;font-size:14px;
+  padding:14px 32px;border-radius:100px;text-decoration:none;
+  border:1px solid var(--border);
+  transition:border-color .2s,color .2s;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn-secondary:hover{border-color:var(--border-glow);color:var(--cyan)}
+.hero-stats{
+  display:flex;gap:40px;margin-top:50px;padding-top:40px;
+  border-top:1px solid var(--border);
+}
+.hero-stat .num{
+  font-family:var(--font-display);font-size:28px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-stat .lbl{font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+
+/* ---- PHONE 3D MOCKUP ---- */
+.hero-right{
+  display:flex;justify-content:center;align-items:center;
+  position:relative;perspective:1200px;
+}
+.phone-scene{
+  position:relative;
+  transform-style:preserve-3d;
+  animation:phoneFloat 6s ease-in-out infinite;
+}
+@keyframes phoneFloat{
+  0%,100%{transform:rotateY(-8deg) rotateX(4deg) translateY(0)}
+  33%{transform:rotateY(-5deg) rotateX(2deg) translateY(-20px)}
+  66%{transform:rotateY(-11deg) rotateX(6deg) translateY(-10px)}
+}
+.phone-glow{
+  position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);
+  width:260px;height:60px;
+  background:radial-gradient(ellipse,rgba(0,212,255,0.3) 0%,transparent 70%);
+  filter:blur(20px);
+  animation:glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.phone-wrap{
+  position:relative;width:280px;
+  filter:drop-shadow(0 40px 80px rgba(0,0,0,0.8)) drop-shadow(0 0 40px rgba(0,212,255,0.15));
+}
+.phone-frame{
+  width:100%;aspect-ratio:9/19.5;
+  background:linear-gradient(135deg,#1a1a2e 0%,#0d1117 100%);
+  border-radius:44px;
+  border:1.5px solid rgba(255,255,255,0.15);
+  overflow:hidden;
+  position:relative;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -1px 0 rgba(0,0,0,0.5);
+}
+.phone-notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:100px;height:28px;
+  background:#0d1117;
+  border-radius:0 0 20px 20px;
+  z-index:10;
+}
+.phone-screen{
+  width:100%;height:100%;
+  overflow:hidden;
+  position:relative;
+}
+.screen-slide{
+  position:absolute;inset:0;
+  display:flex;flex-direction:column;
+  padding:48px 16px 16px;
+  opacity:0;transition:opacity .6s,transform .6s;
+  transform:translateY(20px);
+  background:#0a0e1a;
+}
+.screen-slide.active{opacity:1;transform:translateY(0)}
+
+/* Dashboard screen */
+.screen-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:16px;
+}
+.screen-header .greeting{font-size:10px;color:rgba(255,255,255,.45);font-family:var(--font-mono)}
+.screen-header .name{font-size:13px;font-weight:700;color:white;font-family:var(--font-display)}
+.balance-card{
+  background:linear-gradient(135deg,#0d2a4a,#061828);
+  border:1px solid rgba(0,212,255,.2);
+  border-radius:16px;padding:14px;margin-bottom:12px;
+  position:relative;overflow:hidden;
+}
+.balance-card::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:100px;height:100px;
+  background:radial-gradient(circle,rgba(0,212,255,.15),transparent 70%);
+}
+.balance-label{font-size:9px;color:rgba(0,212,255,.7);letter-spacing:.08em;text-transform:uppercase;font-family:var(--font-mono)}
+.balance-amount{font-size:22px;font-weight:800;color:white;font-family:var(--font-display);margin:2px 0}
+.balance-sub{font-size:8px;color:rgba(255,255,255,.3)}
+.mini-bars{display:flex;gap:4px;align-items:flex-end;height:32px;margin-top:8px}
+.mini-bar{
+  flex:1;border-radius:3px 3px 0 0;background:rgba(0,212,255,.25);
+  transition:height .5s ease;
+}
+.mini-bar.highlight{background:var(--cyan)}
+.health-row{
+  display:flex;gap:8px;margin-bottom:10px;
+}
+.health-card{
+  flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:10px;text-align:center;
+}
+.health-card .hc-val{font-size:16px;font-weight:800;font-family:var(--font-display);color:var(--cyan)}
+.health-card .hc-lbl{font-size:7.5px;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em}
+.txn-list{flex:1;overflow:hidden}
+.txn-item{
+  display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+.txn-icon{
+  width:28px;height:28px;border-radius:8px;
+  background:rgba(0,212,255,.12);
+  display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;
+}
+.txn-info{flex:1;min-width:0}
+.txn-name{font-size:9.5px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.txn-cat{font-size:8px;color:rgba(255,255,255,.35)}
+.txn-amt{font-size:10px;font-weight:700;font-family:var(--font-mono)}
+.txn-amt.debit{color:#ff6b6b}
+.txn-amt.credit{color:var(--green)}
+
+/* AI Chat screen */
+.chat-wrap{padding:48px 12px 12px;height:100%;display:flex;flex-direction:column;background:#0a0e1a}
+.chat-title{font-size:12px;font-weight:700;font-family:var(--font-display);color:white;margin-bottom:8px;text-align:center}
+.chat-sub{font-size:8px;color:rgba(0,212,255,.6);text-align:center;margin-bottom:12px;font-family:var(--font-mono)}
+.chat-messages{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:8px}
+.chat-msg{
+  max-width:85%;padding:8px 10px;border-radius:12px;font-size:9px;line-height:1.5;
+}
+.chat-msg.user{
+  align-self:flex-end;background:linear-gradient(135deg,var(--cyan),#0077aa);
+  color:#000;font-weight:600;border-radius:12px 12px 2px 12px;
+}
+.chat-msg.ai{
+  align-self:flex-start;background:rgba(255,255,255,.07);
+  color:rgba(255,255,255,.85);border-radius:12px 12px 12px 2px;
+  border:1px solid rgba(255,255,255,.1);
+}
+.chat-input-bar{
+  display:flex;gap:6px;align-items:center;margin-top:10px;
+  background:rgba(255,255,255,.06);border-radius:20px;
+  padding:6px 10px;border:1px solid rgba(255,255,255,.1);
+}
+.chat-input-bar span{font-size:8.5px;color:rgba(255,255,255,.3);flex:1}
+.mic-btn{
+  width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan),#006699);
+  display:flex;align-items:center;justify-content:center;font-size:9px;
+}
+
+/* Smart Saver screen */
+.saver-screen{padding:48px 12px 12px;height:100%;display:flex;flex-direction:column;background:#0a0e1a}
+.saver-alert{
+  background:linear-gradient(135deg,rgba(255,107,107,.15),rgba(255,107,107,.05));
+  border:1px solid rgba(255,107,107,.3);border-radius:14px;
+  padding:10px;margin-bottom:10px;
+}
+.saver-alert-title{font-size:9px;font-weight:700;color:#ff6b6b;display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.saver-alert-body{font-size:8px;color:rgba(255,255,255,.6);line-height:1.5}
+.saver-tip{
+  background:rgba(0,229,160,.08);border:1px solid rgba(0,229,160,.2);
+  border-radius:10px;padding:8px;margin-top:auto;
+  font-size:8px;color:rgba(0,229,160,.9);line-height:1.5;
+}
+
+/* Phone nav dots */
+.phone-dots{
+  display:flex;gap:6px;justify-content:center;margin-top:20px;
+}
+.phone-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,.2);cursor:pointer;
+  transition:background .3s,transform .3s;
+}
+.phone-dot.active{background:var(--cyan);transform:scale(1.3)}
+
+/* Orbiting particles */
+.orbit{
+  position:absolute;width:360px;height:360px;
+  top:50%;left:50%;transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.orbit-ring{
+  position:absolute;inset:0;border-radius:50%;
+  border:1px solid rgba(0,212,255,0.06);
+}
+.orbit-dot{
+  position:absolute;width:6px;height:6px;background:var(--cyan);
+  border-radius:50%;top:50%;left:0;transform:translateY(-50%);
+  box-shadow:0 0 10px var(--cyan);
+}
+.orbit1{animation:orbit1 8s linear infinite}
+.orbit2{animation:orbit2 12s linear infinite;border-color:rgba(245,166,35,0.06)}
+.orbit2 .orbit-dot{background:var(--gold);box-shadow:0 0 10px var(--gold);animation:orbit2-dot 12s linear infinite}
+@keyframes orbit1{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes orbit2{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(-360deg)}}
+@keyframes orbit2-dot{from{transform:translateY(-50%) rotate(0)}to{transform:translateY(-50%) rotate(360deg)}}
+
+/* ---- SCROLL REVEAL BASE ---- */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-left{opacity:0;transform:translateX(-40px);transition:opacity .7s ease,transform .7s ease}
+.reveal-left.visible{opacity:1;transform:translateX(0)}
+.reveal-right{opacity:0;transform:translateX(40px);transition:opacity .7s ease,transform .7s ease}
+.reveal-right.visible{opacity:1;transform:translateX(0)}
+.delay-1{transition-delay:.1s}
+.delay-2{transition-delay:.2s}
+.delay-3{transition-delay:.3s}
+.delay-4{transition-delay:.4s}
+.delay-5{transition-delay:.5s}
+
+/* ---- SECTION TITLES ---- */
+.section-label{
+  font-family:var(--font-mono);font-size:10px;color:var(--cyan);
+  letter-spacing:.15em;text-transform:uppercase;
+  margin-bottom:16px;display:flex;align-items:center;gap:12px;
+}
+.section-label::before,.section-label::after{
+  content:'';flex:1;max-width:40px;height:1px;background:currentColor;opacity:.4;
+}
+h2{
+  font-family:var(--font-display);
+  font-size:clamp(32px,4vw,52px);
+  font-weight:800;letter-spacing:-.03em;
+  line-height:1.1;margin-bottom:20px;
+}
+h2 .gradient{
+  background:linear-gradient(135deg,var(--text),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.section-desc{
+  font-size:16px;color:var(--text-muted);line-height:1.7;
+  max-width:560px;
+}
+
+/* ---- PROBLEM SECTION ---- */
+#problem{padding:120px 0;background:linear-gradient(180deg,transparent,rgba(6,13,31,.8),transparent)}
+.problem-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:2px;margin-top:60px;
+  border-radius:var(--r-lg);overflow:hidden;
+}
+.problem-card{
+  background:rgba(255,30,30,0.04);
+  border:1px solid rgba(255,100,100,0.1);
+  padding:36px;
+  position:relative;overflow:hidden;
+  transition:background .3s;
+}
+.problem-card:hover{background:rgba(255,30,30,0.08)}
+.problem-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,100,100,0.3),transparent);
+}
+.problem-icon{
+  font-size:28px;margin-bottom:16px;
+  filter:grayscale(.3);
+}
+.problem-card h3{
+  font-family:var(--font-display);font-size:18px;font-weight:700;
+  margin-bottom:10px;color:var(--text);
+}
+.problem-card p{font-size:14px;color:var(--text-muted);line-height:1.7}
+.problem-solve{
+  margin-top:48px;
+  background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(0,229,160,.06));
+  border:1px solid rgba(0,212,255,.2);
+  border-radius:var(--r-lg);padding:32px 40px;
+  display:flex;align-items:center;gap:24px;
+}
+.solve-emoji{font-size:40px}
+.solve-text h3{
+  font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--cyan);
+  margin-bottom:8px;
+}
+.solve-text p{font-size:15px;color:var(--text-muted);line-height:1.6}
+
+/* ---- FEATURES SECTION ---- */
+#features{padding:120px 0}
+.features-hero{
+  display:grid;grid-template-columns:1fr 480px;
+  gap:80px;align-items:start;margin-top:60px;
+}
+.feature-list{display:flex;flex-direction:column;gap:3px}
+.feature-item{
+  padding:20px 24px;border-radius:var(--r);
+  border:1px solid transparent;
+  cursor:pointer;
+  transition:all .25s;
+  position:relative;
+  overflow:hidden;
+}
+.feature-item::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:2px;background:var(--cyan);
+  transform:scaleY(0);transform-origin:center;
+  transition:transform .25s;
+}
+.feature-item.active,
+.feature-item:hover{
+  background:rgba(255,255,255,.04);
+  border-color:var(--border);
+}
+.feature-item.active::before{transform:scaleY(1)}
+.feature-item.active{border-color:var(--border-glow)}
+.fi-header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.fi-num{
+  font-family:var(--font-mono);font-size:10px;color:var(--cyan);
+  background:var(--cyan-dim);padding:3px 8px;border-radius:4px;
+  flex-shrink:0;
+}
+.fi-title{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text)}
+.feature-item.active .fi-title{color:var(--cyan)}
+.fi-new{
+  font-family:var(--font-mono);font-size:9px;color:var(--gold);
+  background:var(--gold-dim);padding:2px 8px;border-radius:4px;
+  border:1px solid rgba(245,166,35,.3);
+}
+.fi-body{font-size:13px;color:var(--text-muted);line-height:1.6;padding-left:44px;
+  max-height:0;overflow:hidden;transition:max-height .3s;}
+.feature-item.active .fi-body{max-height:100px}
+
+/* Feature visual panel */
+.feature-visual{
+  position:sticky;top:100px;
+}
+.fv-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:32px;
+  position:relative;overflow:hidden;min-height:360px;
+  display:flex;flex-direction:column;
+}
+.fv-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.07),transparent 60%);
+}
+.fv-icon{font-size:48px;margin-bottom:20px}
+.fv-title{
+  font-family:var(--font-display);font-size:22px;font-weight:800;
+  margin-bottom:12px;
+}
+.fv-desc{font-size:14px;color:var(--text-muted);line-height:1.7;flex:1}
+.fv-metrics{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;
+}
+.fv-metric{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--r);padding:14px;
+}
+.fv-metric .val{
+  font-family:var(--font-display);font-size:22px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.fv-metric .lbl{font-size:10px;color:var(--text-muted);margin-top:2px}
+
+/* ---- SMART SAVER SECTION ---- */
+#smart-saver{
+  padding:120px 0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(255,107,107,0.06),transparent 60%);
+  border-top:1px solid rgba(255,107,107,0.1);
+  border-bottom:1px solid rgba(255,107,107,0.1);
+}
+.saver-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:60px;align-items:center;margin-top:60px;
+}
+.saver-cards{display:flex;flex-direction:column;gap:16px}
+.saver-card{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:24px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s,transform .3s;
+}
+.saver-card:hover{border-color:rgba(255,107,107,0.25);transform:translateX(6px)}
+.saver-card::after{
+  content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;background:linear-gradient(180deg,#ff6b6b,#ff9900);
+  border-radius:0 2px 2px 0;
+}
+.sc-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.sc-icon{font-size:22px}
+.sc-title{font-family:var(--font-display);font-size:15px;font-weight:700}
+.sc-body{font-size:13px;color:var(--text-muted);line-height:1.6;padding-left:34px}
+.saver-visual{
+  background:linear-gradient(135deg,rgba(255,107,107,.06),rgba(255,153,0,.04));
+  border:1px solid rgba(255,107,107,.15);
+  border-radius:var(--r-lg);padding:32px;
+  position:relative;overflow:hidden;
+}
+.danger-badge{
+  background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.3);
+  border-radius:100px;display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;margin-bottom:20px;
+  font-size:11px;color:#ff6b6b;font-weight:600;letter-spacing:.06em;font-family:var(--font-mono);
+}
+.alert-mockup{
+  background:rgba(10,14,26,.9);border:1px solid rgba(255,107,107,.25);
+  border-radius:16px;padding:20px;margin-bottom:16px;
+}
+.am-time{font-size:10px;color:rgba(255,107,107,.7);font-family:var(--font-mono);margin-bottom:8px}
+.am-msg{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:14px}
+.am-amt{
+  font-family:var(--font-display);font-size:28px;font-weight:800;
+  color:#ff6b6b;margin-bottom:4px;
+}
+.am-sub{font-size:11px;color:var(--text-muted)}
+.am-btns{display:flex;gap:8px;margin-top:14px}
+.am-btn{
+  flex:1;padding:8px;border-radius:8px;font-size:11px;font-weight:700;
+  text-align:center;cursor:pointer;
+}
+.am-btn.cancel{background:rgba(255,107,107,.15);color:#ff6b6b;border:1px solid rgba(255,107,107,.25)}
+.am-btn.confirm{background:rgba(255,255,255,.08);color:var(--text-muted);border:1px solid rgba(255,255,255,.1)}
+.weekly-report{
+  background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);
+  border-radius:12px;padding:16px;
+}
+.wr-title{font-size:10px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono);margin-bottom:10px}
+.wr-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.wr-item:last-child{border:none}
+.wr-lbl{font-size:11px;color:var(--text-muted)}
+.wr-val{font-size:11px;font-weight:700;font-family:var(--font-mono)}
+.wr-val.good{color:var(--green)}
+.wr-val.warn{color:#ff9900}
+
+/* ---- AI STACK SECTION ---- */
+#ai-stack{padding:120px 0}
+.stack-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);
+  gap:16px;margin-top:60px;
+}
+.stack-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:28px;
+  position:relative;overflow:hidden;
+  transition:border-color .3s,transform .3s;
+}
+.stack-card:hover{border-color:var(--border-glow);transform:translateY(-4px)}
+.stack-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 0% 0%,rgba(0,212,255,0.05),transparent 50%);
+  opacity:0;transition:opacity .3s;
+}
+.stack-card:hover::before{opacity:1}
+.sc-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.15);
+  border-radius:100px;padding:4px 12px;
+  font-family:var(--font-mono);font-size:10px;color:var(--cyan);
+  margin-bottom:16px;
+}
+.sc-size{
+  background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.2);color:var(--gold);
+}
+.sc-name{font-family:var(--font-display);font-size:18px;font-weight:800;margin-bottom:8px}
+.sc-desc{font-size:13px;color:var(--text-muted);line-height:1.6}
+.sc-bar{
+  height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:16px;overflow:hidden;
+}
+.sc-bar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));border-radius:2px;width:0;transition:width 1.5s ease}
+.total-footprint{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,rgba(0,212,255,.06),rgba(245,166,35,.04));
+  border:1px solid rgba(0,212,255,.15);border-radius:var(--r-lg);
+  padding:28px 36px;display:flex;align-items:center;justify-content:space-between;
+}
+.tf-left h3{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--text);margin-bottom:4px}
+.tf-left p{font-size:14px;color:var(--text-muted)}
+.tf-right{
+  font-family:var(--font-display);font-size:52px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.tf-right span{font-size:20px;vertical-align:super}
+
+/* ---- TECH STACK ---- */
+#tech-stack{padding:120px 0;background:linear-gradient(180deg,transparent,rgba(6,13,31,.6),transparent)}
+.tech-grid{
+  display:flex;flex-wrap:wrap;gap:12px;margin-top:48px;justify-content:center;
+}
+.tech-pill{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 20px;border-radius:100px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  transition:all .25s;cursor:default;
+}
+.tech-pill:hover{border-color:var(--border-glow);background:var(--cyan-dim);transform:translateY(-2px)}
+.tp-icon{font-size:16px}
+.tp-name{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--text)}
+.tp-cat{font-size:10px;color:var(--text-dim)}
+
+/* ---- PRIVACY SECTION ---- */
+#privacy{
+  padding:120px 0;
+  background:radial-gradient(ellipse at 50% 100%,rgba(0,212,255,0.05),transparent 60%);
+}
+.privacy-layout{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:80px;align-items:center;margin-top:60px;
+}
+.privacy-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.priv-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:24px;
+  transition:border-color .3s,transform .3s;
+}
+.priv-card:hover{border-color:var(--border-glow);transform:translateY(-4px)}
+.priv-icon{font-size:28px;margin-bottom:14px}
+.priv-title{font-family:var(--font-display);font-size:14px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.priv-desc{font-size:12px;color:var(--text-muted);line-height:1.6}
+.privacy-visual{
+  display:flex;flex-direction:column;justify-content:center;
+}
+.vault-visual{
+  background:linear-gradient(135deg,rgba(0,212,255,.07),rgba(0,153,204,.04));
+  border:1px solid rgba(0,212,255,.15);border-radius:var(--r-lg);
+  padding:40px;text-align:center;position:relative;overflow:hidden;
+}
+.vault-icon{font-size:80px;margin-bottom:20px;display:block;
+  filter:drop-shadow(0 0 30px rgba(0,212,255,0.4));
+  animation:vaultPulse 4s ease-in-out infinite;
+}
+@keyframes vaultPulse{0%,100%{filter:drop-shadow(0 0 20px rgba(0,212,255,.3))}50%{filter:drop-shadow(0 0 40px rgba(0,212,255,.7))}}
+.vault-title{font-family:var(--font-display);font-size:22px;font-weight:800;margin-bottom:8px}
+.vault-sub{font-size:14px;color:var(--text-muted);line-height:1.6}
+.vault-badge{
+  display:inline-block;margin-top:20px;
+  padding:8px 20px;border-radius:100px;
+  background:linear-gradient(135deg,var(--cyan),#006699);
+  color:#000;font-weight:700;font-size:12px;letter-spacing:.04em;
+}
+
+/* ---- HOW IT WORKS ---- */
+#how-it-works{padding:120px 0}
+.flow-steps{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;margin-top:60px;position:relative;
+}
+.flow-steps::before{
+  content:'';position:absolute;top:40px;left:calc(12.5%);right:calc(12.5%);
+  height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);
+  opacity:.3;
+}
+.flow-step{
+  text-align:center;padding:0 16px;position:relative;
+}
+.flow-step::after{
+  content:'';position:absolute;top:28px;right:-1px;
+  width:24px;height:24px;
+  border-right:1px solid rgba(0,212,255,.3);
+  border-top:1px solid rgba(0,212,255,.3);
+  transform:rotate(45deg) translateX(0);
+}
+.flow-step:last-child::after{display:none}
+.step-num{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cyan-dim),transparent);
+  border:1px solid var(--border-glow);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--cyan);
+  margin:0 auto 16px;
+  transition:transform .3s,box-shadow .3s;
+}
+.flow-step:hover .step-num{
+  transform:scale(1.1);
+  box-shadow:0 0 30px rgba(0,212,255,.3);
+}
+.step-icon{font-size:20px;margin-bottom:12px}
+.step-title{font-family:var(--font-display);font-size:13px;font-weight:700;margin-bottom:6px}
+.step-desc{font-size:11.5px;color:var(--text-muted);line-height:1.5}
+.flow-steps-2{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;margin-top:0;position:relative;
+}
+.flow-steps-2::before{
+  content:'';position:absolute;top:40px;left:calc(12.5%);right:calc(12.5%);
+  height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  opacity:.3;
+}
+.flow-step-2{
+  text-align:center;padding:20px 16px 0;position:relative;
+}
+.flow-step-2::after{
+  content:'';position:absolute;top:48px;right:-1px;
+  width:24px;height:24px;
+  border-right:1px solid rgba(245,166,35,.3);
+  border-top:1px solid rgba(245,166,35,.3);
+  transform:rotate(45deg);
+}
+.flow-step-2:last-child::after{display:none}
+.step-num-2{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-dim),transparent);
+  border:1px solid rgba(245,166,35,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold);
+  margin:0 auto 16px;
+  transition:transform .3s,box-shadow .3s;
+}
+.flow-step-2:hover .step-num-2{
+  transform:scale(1.1);
+  box-shadow:0 0 30px rgba(245,166,35,.3);
+}
+
+/* ---- CTA / STATS SECTION ---- */
+#cta{
+  padding:120px 0;
+  background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,0.07),transparent 60%);
+}
+.cta-inner{text-align:center;max-width:800px;margin:0 auto}
+.cta-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:2px;margin:60px 0;
+  background:var(--border);border-radius:var(--r-lg);overflow:hidden;
+}
+.cta-stat{
+  background:var(--bg);padding:32px 24px;text-align:center;
+  transition:background .3s;
+}
+.cta-stat:hover{background:rgba(0,212,255,.04)}
+.cs-num{
+  font-family:var(--font-display);font-size:clamp(28px,4vw,44px);font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  display:block;margin-bottom:6px;
+}
+.cs-lbl{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em}
+.cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.github-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:14px 32px;border-radius:100px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border);
+  color:var(--text);text-decoration:none;font-weight:600;font-size:14px;
+  transition:all .25s;
+}
+.github-btn:hover{border-color:var(--border-glow);color:var(--cyan);transform:translateY(-2px)}
+
+/* ---- FOOTER ---- */
+footer{
+  border-top:1px solid var(--border);padding:48px 0 32px;
+  background:var(--bg2);
+}
+.footer-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:24px;
+}
+.footer-logo{
+  font-family:var(--font-display);font-size:20px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.footer-links{display:flex;gap:28px}
+.footer-links a{
+  font-size:13px;color:var(--text-muted);text-decoration:none;
+  transition:color .2s;
+}
+.footer-links a:hover{color:var(--cyan)}
+.footer-copy{font-size:12px;color:var(--text-dim);width:100%}
+.footer-hackathon{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--gold-dim);border:1px solid rgba(245,166,35,.2);
+  border-radius:100px;padding:6px 14px;
+  font-size:11px;color:var(--gold);font-family:var(--font-mono);
+  letter-spacing:.06em;
+}
+
+/* ---- PARALLAX LAYERS ---- */
+.parallax-slow{will-change:transform}
+.parallax-med{will-change:transform}
+.parallax-fast{will-change:transform}
+
+/* ---- SCROLL PROGRESS ---- */
+#progress{
+  position:fixed;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--gold));
+  z-index:200;transform-origin:left;transform:scaleX(0);
+}
+
+/* ---- SKELETON ---- */
+.skeleton{
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.1) 50%,rgba(255,255,255,.05) 100%);
+  background-size:200% 100%;
+  animation:skeleton-shimmer 1.5s infinite;
+  border-radius:4px;
+}
+@keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ---- RESPONSIVE ---- */
+@media(max-width:900px){
+  .hero-inner,.features-hero,.saver-layout,.privacy-layout{grid-template-columns:1fr}
+  .hero-right{margin-top:40px}
+  .problem-grid{grid-template-columns:1fr}
+  .flow-steps,.flow-steps-2{grid-template-columns:repeat(2,1fr)}
+  .flow-step::after,.flow-step-2::after{display:none}
+  .flow-steps::before,.flow-steps-2::before{display:none}
+  .stack-grid{grid-template-columns:1fr}
+  .cta-stats{grid-template-columns:repeat(2,1fr)}
+  .privacy-cards{grid-template-columns:1fr}
+  nav{padding:16px 20px}
+  .container{padding:0 20px}
+  .nav-links{display:none}
+}
+@media(max-width:600px){
+  h1{font-size:36px}
+  h2{font-size:28px}
+  .hero-stats{flex-wrap:wrap;gap:20px}
+  .cta-stats{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Scroll progress -->
+<div id="progress"></div>
+
+<!-- Background effects -->
+<div class="noise" aria-hidden="true"></div>
+<div class="aurora" aria-hidden="true"></div>
+
+<!-- ============ NAV ============ -->
+<nav id="nav">
+  <a href="#" class="nav-logo">SpendAI</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#smart-saver">Smart Saver</a></li>
+    <li><a href="#ai-stack">AI Stack</a></li>
+    <li><a href="#privacy">Privacy</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+  </ul>
+  <a href="https://github.com/KS-Mohit/SpendAI" target="_blank" class="nav-cta">
+    ↗ View on GitHub
+  </a>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section id="hero">
+  <div class="hero-grid-bg" aria-hidden="true"></div>
+  <div class="container">
+    <div class="hero-inner">
+
+      <div class="hero-left">
+        <div class="label parallax-slow" data-speed="0.3">
+          ✦ HackXtreme Hackathon Project
+        </div>
+        <h1 class="reveal">
+          Your Money.<br>
+          <span class="gradient">Your Device.</span><br>
+          Your Privacy.
+        </h1>
+        <p class="hero-desc reveal delay-1">
+          SpendAI is an on-device AI financial advisor that reads your bank SMS, tracks spending, and answers money questions — <strong>100% offline. Zero cloud. Zero compromise.</strong>
+        </p>
+
+        <div class="hero-tags reveal delay-2">
+          <span class="hero-tag"><span class="icon">🤖</span> On-Device LLM</span>
+          <span class="hero-tag"><span class="icon">🔒</span> Privacy-First</span>
+          <span class="hero-tag"><span class="icon">📱</span> Auto SMS Parsing</span>
+          <span class="hero-tag"><span class="icon">🎙️</span> Voice Assistant</span>
+          <span class="hero-tag"><span class="icon">☁️</span> Zero Cloud</span>
+        </div>
+
+        <div class="hero-btns reveal delay-3">
+          <a href="https://github.com/KS-Mohit/SpendAI" target="_blank" class="btn-primary">
+            ⭐ GitHub Repo
+          </a>
+          <a href="#features" class="btn-secondary">
+            Explore Features →
+          </a>
+        </div>
+
+        <div class="hero-stats reveal delay-4">
+          <div class="hero-stat">
+            <div class="num" data-count="340">0</div>
+            <div class="lbl">MB Model Size</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num" data-count="100">0</div>
+            <div class="lbl">% On-Device</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num" data-count="0">0</div>
+            <div class="lbl">Cloud API Calls</div>
+          </div>
+          <div class="hero-stat">
+            <div class="num" data-count="79">0</div>
+            <div class="lbl">Health Score</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3D Phone Mockup -->
+      <div class="hero-right reveal-right">
+        <div class="orbit orbit1" aria-hidden="true">
+          <div class="orbit-ring"></div>
+          <div class="orbit-dot"></div>
+        </div>
+        <div class="orbit orbit2" aria-hidden="true" style="width:460px;height:460px">
+          <div class="orbit-ring"></div>
+          <div class="orbit-dot"></div>
+        </div>
+        <div class="phone-scene">
+          <div class="phone-glow" aria-hidden="true"></div>
+          <div class="phone-wrap">
+            <div class="phone-frame">
+              <div class="phone-notch"></div>
+              <div class="phone-screen" id="phoneScreen">
+
+                <!-- Screen 1: Dashboard -->
+                <div class="screen-slide active" id="screen0">
+                  <div class="screen-header">
+                    <div>
+                      <div class="greeting">Good morning 👋</div>
+                      <div class="name">SpendAI</div>
+                    </div>
+                    <div style="font-size:18px">🔐</div>
+                  </div>
+                  <div class="balance-card">
+                    <div class="balance-label">Total Spent This Month</div>
+                    <div class="balance-amount">₹18,420</div>
+                    <div class="balance-sub">₹11,580 remaining of ₹30,000 budget</div>
+                    <div class="mini-bars">
+                      <div class="mini-bar" style="height:40%"></div>
+                      <div class="mini-bar" style="height:60%"></div>
+                      <div class="mini-bar highlight" style="height:80%"></div>
+                      <div class="mini-bar" style="height:55%"></div>
+                      <div class="mini-bar" style="height:70%"></div>
+                      <div class="mini-bar" style="height:45%"></div>
+                      <div class="mini-bar highlight" style="height:90%"></div>
+                    </div>
+                  </div>
+                  <div class="health-row">
+                    <div class="health-card">
+                      <div class="hc-val">79</div>
+                      <div class="hc-lbl">Health Score</div>
+                    </div>
+                    <div class="health-card">
+                      <div class="hc-val" style="color:var(--gold)">12</div>
+                      <div class="hc-lbl">Transactions</div>
+                    </div>
+                  </div>
+                  <div class="txn-list">
+                    <div class="txn-item">
+                      <div class="txn-icon">🍕</div>
+                      <div class="txn-info">
+                        <div class="txn-name">Swiggy</div>
+                        <div class="txn-cat">Food & Dining</div>
+                      </div>
+                      <div class="txn-amt debit">-₹416</div>
+                    </div>
+                    <div class="txn-item">
+                      <div class="txn-icon">🛒</div>
+                      <div class="txn-info">
+                        <div class="txn-name">Amazon</div>
+                        <div class="txn-cat">Shopping</div>
+                      </div>
+                      <div class="txn-amt debit">-₹1,299</div>
+                    </div>
+                    <div class="txn-item">
+                      <div class="txn-icon">💰</div>
+                      <div class="txn-info">
+                        <div class="txn-name">Salary Credit</div>
+                        <div class="txn-cat">Income</div>
+                      </div>
+                      <div class="txn-amt credit">+₹45,000</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Screen 2: AI Chat -->
+                <div class="screen-slide" id="screen1">
+                  <div class="chat-wrap">
+                    <div class="chat-title">Finance AI</div>
+                    <div class="chat-sub">🎙 On-device · Works offline</div>
+                    <div class="chat-messages">
+                      <div class="chat-msg user">How much did I spend on food this month?</div>
+                      <div class="chat-msg ai">You spent ₹4,820 on food this month — that's 26% of your budget. Swiggy accounts for 65% of it. Want me to set a daily food limit? 🍽️</div>
+                      <div class="chat-msg user">Am I on track for this month?</div>
+                      <div class="chat-msg ai">You're 61% through the month but 58% through your budget. You're slightly ahead! Predicted month-end: ₹29,200 — just under your ₹30k goal ✅</div>
+                    </div>
+                    <div class="chat-input-bar">
+                      <span>Ask anything about your money…</span>
+                      <div class="mic-btn">🎙</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Screen 3: Smart Saver -->
+                <div class="screen-slide" id="screen2">
+                  <div class="saver-screen">
+                    <div class="screen-header">
+                      <div>
+                        <div class="greeting">🌙 12:47 AM Alert</div>
+                        <div class="name">Smart Saver</div>
+                      </div>
+                      <div style="font-size:18px">⚡</div>
+                    </div>
+                    <div class="saver-alert">
+                      <div class="saver-alert-title">🚨 Danger Window Detected</div>
+                      <div class="saver-alert-body">It's late night. You've spent ₹3,200 on food this week — 99% of your budget. Late-night orders = 40% of food spend.</div>
+                    </div>
+                    <div style="background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.2);border-radius:12px;padding:12px;margin-bottom:10px">
+                      <div style="font-size:9px;color:rgba(255,107,107,.7);font-family:var(--font-mono);margin-bottom:4px">₹ AMOUNT</div>
+                      <div style="font-family:var(--font-display);font-size:24px;font-weight:800;color:#ff6b6b">₹416.20</div>
+                      <div style="font-size:8px;color:var(--text-muted);margin-top:2px">Swiggy · Food · Just now</div>
+                      <div style="display:flex;gap:6px;margin-top:10px">
+                        <div style="flex:1;padding:7px;border-radius:7px;background:rgba(255,107,107,.15);color:#ff6b6b;font-size:10px;font-weight:700;text-align:center;border:1px solid rgba(255,107,107,.25)">Wait, skip</div>
+                        <div style="flex:1;padding:7px;border-radius:7px;background:rgba(255,255,255,.06);color:var(--text-muted);font-size:10px;font-weight:700;text-align:center;border:1px solid rgba(255,255,255,.1)">Confirm</div>
+                      </div>
+                    </div>
+                    <div class="saver-tip">💡 Try cooking tonight — you'll save ~₹400 and stay in budget!</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          <div class="phone-dots">
+            <div class="phone-dot active" onclick="setScreen(0)"></div>
+            <div class="phone-dot" onclick="setScreen(1)"></div>
+            <div class="phone-dot" onclick="setScreen(2)"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- hero-inner -->
+  </div><!-- container -->
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label reveal">The Problem</div>
+    <h2 class="reveal delay-1">Why Existing Solutions <span class="gradient">Fail You</span></h2>
+    <p class="section-desc reveal delay-2">People want to manage their finances, but every tool in the market creates as many problems as it solves.</p>
+
+    <div class="problem-grid" style="margin-top:60px">
+      <div class="problem-card reveal delay-1">
+        <div class="problem-icon">📝</div>
+        <h3>Manual Logging is Tedious</h3>
+        <p>Logging every transaction by hand is time-consuming — most people give up within days of trying.</p>
+      </div>
+      <div class="problem-card reveal delay-2">
+        <div class="problem-icon">☁️</div>
+        <h3>Cloud Privacy Risk</h3>
+        <p>Most apps upload your financial data to servers — creating real privacy vulnerabilities and trust issues.</p>
+      </div>
+      <div class="problem-card reveal delay-3">
+        <div class="problem-icon">📨</div>
+        <h3>SMS Goes Unnoticed</h3>
+        <p>Bank & UPI SMS alerts are ignored and never organized into useful data. That's money insight going to waste.</p>
+      </div>
+      <div class="problem-card reveal delay-4">
+        <div class="problem-icon">🤷</div>
+        <h3>No Intelligent Analysis</h3>
+        <p>Existing apps show numbers but can't answer questions, spot patterns, or change your behavior.</p>
+      </div>
+    </div>
+
+    <div class="problem-solve reveal delay-2">
+      <div class="solve-emoji">💡</div>
+      <div class="solve-text">
+        <h3>SpendAI solves all four — simultaneously</h3>
+        <p>Automatic SMS parsing, zero cloud dependency, on-device AI intelligence, and behavioral insights. All in one app. All offline.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section id="features">
+  <div class="container">
+    <div class="section-label reveal">Core Features</div>
+    <h2 class="reveal delay-1">Everything You Need,<br><span class="gradient">Nothing You Don't</span></h2>
+
+    <div class="features-hero">
+      <div class="feature-list" id="featureList">
+
+        <div class="feature-item active reveal delay-1" data-feature="0">
+          <div class="fi-header">
+            <span class="fi-num">01</span>
+            <span class="fi-title">100% On-Device AI</span>
+          </div>
+          <div class="fi-body">LLM runs entirely on your phone. No internet required after setup. Your data never leaves the device — ever.</div>
+        </div>
+
+        <div class="feature-item reveal delay-2" data-feature="1">
+          <div class="fi-header">
+            <span class="fi-num">02</span>
+            <span class="fi-title">Auto SMS Parsing</span>
+          </div>
+          <div class="fi-body">Detects bank/UPI/wallet SMS in real-time. Extracts amount, merchant, balance, and transaction type automatically.</div>
+        </div>
+
+        <div class="feature-item reveal delay-3" data-feature="2">
+          <div class="fi-header">
+            <span class="fi-num">03</span>
+            <span class="fi-title">Voice Assistant</span>
+          </div>
+          <div class="fi-body">Ask "How much did I spend on food?" and get spoken answers — powered by on-device Whisper STT + Piper TTS. Works offline.</div>
+        </div>
+
+        <div class="feature-item reveal delay-4" data-feature="3">
+          <div class="fi-header">
+            <span class="fi-num">04</span>
+            <span class="fi-title">Financial Health Score</span>
+          </div>
+          <div class="fi-body">A 0–100 score based on spending patterns and budget adherence. See your financial health at a single glance.</div>
+        </div>
+
+        <div class="feature-item reveal delay-5" data-feature="4">
+          <div class="fi-header">
+            <span class="fi-num">05</span>
+            <span class="fi-title">Smart Budget Tracking</span>
+          </div>
+          <div class="fi-body">Set per-category budgets. Visual progress bars with real-time overage warnings in red when you're close to the limit.</div>
+        </div>
+
+        <div class="feature-item reveal" data-feature="5">
+          <div class="fi-header">
+            <span class="fi-num">06</span>
+            <span class="fi-title">Smart Saver — Impulse Detection</span>
+            <span class="fi-new">✦ NEW</span>
+          </div>
+          <div class="fi-body">Detects late-night & impulse transactions. Identifies personal danger windows + gives a weekly AI report to build healthier habits.</div>
+        </div>
+
+      </div>
+
+      <div class="feature-visual">
+        <div class="fv-card" id="featureCard">
+          <div class="fv-icon" id="fvIcon">🤖</div>
+          <div class="fv-title" id="fvTitle">100% On-Device AI</div>
+          <div class="fv-desc" id="fvDesc">LFM2-350M language model runs entirely on your phone using llama.cpp. No internet required after the initial 340MB one-time setup download. Your financial data never leaves your device — not even for inference.</div>
+          <div class="fv-metrics">
+            <div class="fv-metric">
+              <div class="val" id="fvM1">340MB</div>
+              <div class="lbl">Total AI footprint</div>
+            </div>
+            <div class="fv-metric">
+              <div class="val" id="fvM2">0</div>
+              <div class="lbl">Cloud API calls</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ SMART SAVER ============ -->
+<section id="smart-saver">
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+      <div class="section-label reveal" style="margin-bottom:0">New Feature</div>
+      <div class="chip reveal" style="margin-bottom:0">
+        <div class="dot"></div>
+        Smart Saver ✦ Impulse Detection
+      </div>
+    </div>
+    <h2 class="reveal delay-1">AI That Watches<br><span class="gradient">Your Patterns</span></h2>
+    <p class="section-desc reveal delay-2">Not just notifications — a behavioral engine that learns your personal danger windows and helps you build healthier money habits.</p>
+
+    <div class="saver-layout">
+      <div class="saver-cards">
+        <div class="saver-card reveal delay-1">
+          <div class="sc-header">
+            <div class="sc-icon">🌙</div>
+            <div class="sc-title">Danger Window Detection</div>
+          </div>
+          <div class="sc-body">AI identifies your personal high-risk spending times — late nights, weekends, post-payday. Not just midnight, but <em>your</em> specific patterns.</div>
+        </div>
+        <div class="saver-card reveal delay-2">
+          <div class="sc-header">
+            <div class="sc-icon">⚡</div>
+            <div class="sc-title">Real-Time Friction Prompt</div>
+          </div>
+          <div class="sc-body">When a transaction is logged during a danger window, a full-screen prompt asks: "It's 12:30 AM. You've spent ₹3,200 on food this week. Are you sure?"</div>
+        </div>
+        <div class="saver-card reveal delay-3">
+          <div class="sc-header">
+            <div class="sc-icon">📊</div>
+            <div class="sc-title">Weekly Smart Saver Report</div>
+          </div>
+          <div class="sc-body">Every Monday: impulse spends last week, money saved vs previous week, your most tempting category, and one actionable AI tip.</div>
+        </div>
+        <div class="saver-card reveal delay-4">
+          <div class="sc-header">
+            <div class="sc-icon">🧠</div>
+            <div class="sc-title">AI-Powered Advice</div>
+          </div>
+          <div class="sc-body">On-device LLM analyzes your transaction history and gives personalized suggestions to reduce unnecessary spending and build healthier habits.</div>
+        </div>
+      </div>
+
+      <div class="saver-visual reveal-right">
+        <div class="danger-badge">⚠️ Danger Window Active</div>
+        <div class="alert-mockup">
+          <div class="am-time">⏰ 12:47 AM  •  Swiggy  •  Food</div>
+          <div class="am-msg">You've spent ₹2,813 on Food this week — 99% of your budget. Late-night food orders account for 40% of your food spend.</div>
+          <div class="am-amt">₹416.20</div>
+          <div class="am-sub">Are you sure you want to proceed?</div>
+          <div class="am-btns">
+            <div class="am-btn cancel">Wait, skip it</div>
+            <div class="am-btn confirm">Confirm anyway</div>
+          </div>
+        </div>
+        <div class="weekly-report">
+          <div class="wr-title">📅 Monday Report — This Week</div>
+          <div class="wr-item">
+            <div class="wr-lbl">Impulse spends detected</div>
+            <div class="wr-val warn">5 transactions</div>
+          </div>
+          <div class="wr-item">
+            <div class="wr-lbl">Money saved vs last week</div>
+            <div class="wr-val good">+₹820 saved</div>
+          </div>
+          <div class="wr-item">
+            <div class="wr-lbl">Most tempting category</div>
+            <div class="wr-val warn">🍕 Food (late night)</div>
+          </div>
+          <div style="margin-top:10px;padding:8px;background:rgba(0,229,160,.08);border-radius:8px;font-size:11px;color:rgba(0,229,160,.9)">
+            💡 Try cooking tonight — you'll save ~₹400 and stay in budget!
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AI STACK ============ -->
+<section id="ai-stack">
+  <div class="container">
+    <div class="section-label reveal" style="justify-content:center">AI Architecture</div>
+    <h2 class="reveal delay-1" style="text-align:center">On-Device AI —<br><span class="gradient">No Internet Required</span></h2>
+    <p class="section-desc reveal delay-2" style="text-align:center;margin:0 auto">Four specialized AI models working in harmony, all running on your phone, all offline after first setup.</p>
+
+    <div class="stack-grid">
+      <div class="stack-card reveal delay-1">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div class="sc-badge">Language Model</div>
+          <div class="sc-badge sc-size">238 MB</div>
+        </div>
+        <div class="sc-name">LFM2-350M</div>
+        <div class="sc-desc">GGUF model via llama.cpp. Handles expense categorization, financial chat, and intelligent spending analysis — all on-device.</div>
+        <div class="sc-bar"><div class="sc-bar-fill" data-width="75"></div></div>
+      </div>
+      <div class="stack-card reveal delay-2">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div class="sc-badge">Speech-to-Text</div>
+          <div class="sc-badge sc-size">40 MB</div>
+        </div>
+        <div class="sc-name">Whisper Tiny ONNX</div>
+        <div class="sc-desc">Voice query transcription for the Finance AI voice mode. Converts your spoken questions to text instantly, offline.</div>
+        <div class="sc-bar"><div class="sc-bar-fill" data-width="45"></div></div>
+      </div>
+      <div class="stack-card reveal delay-3">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div class="sc-badge">Text-to-Speech</div>
+          <div class="sc-badge sc-size">60 MB</div>
+        </div>
+        <div class="sc-name">Piper Lessac ONNX</div>
+        <div class="sc-desc">Converts AI text responses to natural spoken audio. Gives the Finance AI a real voice that answers your money questions aloud.</div>
+        <div class="sc-bar"><div class="sc-bar-fill" data-width="55"></div></div>
+      </div>
+      <div class="stack-card reveal delay-4">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <div class="sc-badge">Voice Detection</div>
+          <div class="sc-badge sc-size">~2 MB</div>
+        </div>
+        <div class="sc-name">Silero VAD</div>
+        <div class="sc-desc">Detects when you start and stop speaking for a responsive voice UX. Lightweight and always-on, uses negligible resources.</div>
+        <div class="sc-bar"><div class="sc-bar-fill" data-width="20"></div></div>
+      </div>
+      <div class="total-footprint reveal delay-2">
+        <div class="tf-left">
+          <h3>Total On-Device AI Footprint</h3>
+          <p>Downloaded once, cached permanently. Works forever without internet.</p>
+        </div>
+        <div class="tf-right"><span>~</span>340MB</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TECH STACK ============ -->
+<section id="tech-stack">
+  <div class="container" style="text-align:center">
+    <div class="section-label reveal" style="justify-content:center">Built With</div>
+    <h2 class="reveal delay-1" style="font-size:clamp(26px,3vw,40px)">Modern Tools, <span class="gradient">Thoughtfully Chosen</span></h2>
+
+    <div class="tech-grid">
+      <div class="tech-pill reveal delay-1"><span class="tp-icon">⚛️</span><span class="tp-name">Expo</span><span class="tp-cat">React Native</span></div>
+      <div class="tech-pill reveal delay-1"><span class="tp-icon">🔵</span><span class="tp-name">TypeScript</span><span class="tp-cat">Language</span></div>
+      <div class="tech-pill reveal delay-2"><span class="tp-icon">🗄️</span><span class="tp-name">SQLite</span><span class="tp-cat">Local Database</span></div>
+      <div class="tech-pill reveal delay-2"><span class="tp-icon">🧭</span><span class="tp-name">React Navigation 7</span><span class="tp-cat">Navigation</span></div>
+      <div class="tech-pill reveal delay-3"><span class="tp-icon">🤖</span><span class="tp-name">RunAnywhere SDK</span><span class="tp-cat">AI Runtime</span></div>
+      <div class="tech-pill reveal delay-3"><span class="tp-icon">🦙</span><span class="tp-name">LlamaCPP</span><span class="tp-cat">LLM Inference</span></div>
+      <div class="tech-pill reveal delay-4"><span class="tp-icon">📐</span><span class="tp-name">ONNX Runtime</span><span class="tp-cat">ML Models</span></div>
+      <div class="tech-pill reveal delay-4"><span class="tp-icon">📱</span><span class="tp-name">SMS Listener</span><span class="tp-cat">SMS Parsing</span></div>
+      <div class="tech-pill reveal delay-1"><span class="tp-icon">🔊</span><span class="tp-name">expo-av</span><span class="tp-cat">Audio</span></div>
+      <div class="tech-pill reveal delay-2"><span class="tp-icon">🔔</span><span class="tp-name">expo-notifications</span><span class="tp-cat">Alerts</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRIVACY ============ -->
+<section id="privacy">
+  <div class="container">
+    <div class="privacy-layout">
+      <div>
+        <div class="section-label reveal">Security & Privacy</div>
+        <h2 class="reveal delay-1">Privacy by<br><span class="gradient">Architecture,<br>Not Policy</span></h2>
+        <p class="section-desc reveal delay-2" style="margin-bottom:40px">We don't promise to protect your data. We architect the app so <em>we can't even access it</em>. Your phone is your private vault.</p>
+        <div class="privacy-cards">
+          <div class="priv-card reveal delay-1">
+            <div class="priv-icon">🗄️</div>
+            <div class="priv-title">Zero Cloud Storage</div>
+            <div class="priv-desc">SQLite database stored only on your device. We have no servers to breach.</div>
+          </div>
+          <div class="priv-card reveal delay-2">
+            <div class="priv-icon">🚫</div>
+            <div class="priv-title">No API Calls</div>
+            <div class="priv-desc">No backend servers. No analytics. No tracking. No third-party data sharing of any kind.</div>
+          </div>
+          <div class="priv-card reveal delay-3">
+            <div class="priv-icon">💻</div>
+            <div class="priv-title">Local Inference</div>
+            <div class="priv-desc">All AI runs via RunAnywhere SDK using llama.cpp and ONNX — 100% offline inference.</div>
+          </div>
+          <div class="priv-card reveal delay-4">
+            <div class="priv-icon">✋</div>
+            <div class="priv-title">User Always in Control</div>
+            <div class="priv-desc">AI suggests, user confirms. No transaction is ever auto-saved without your explicit consent.</div>
+          </div>
+        </div>
+      </div>
+      <div class="privacy-visual reveal-right">
+        <div class="vault-visual">
+          <span class="vault-icon">🔐</span>
+          <div class="vault-title">Your Financial Data<br>Never Leaves Your Device</div>
+          <div class="vault-sub">No exceptions. No backdoors. No analytics. SpendAI is engineered so that privacy is impossible to violate — not just unlikely.</div>
+          <div class="vault-badge">Zero Cloud · Zero Compromise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT WORKS ============ -->
+<section id="how-it-works">
+  <div class="container">
+    <div class="section-label reveal" style="justify-content:center">Transaction Flow</div>
+    <h2 class="reveal delay-1" style="text-align:center">From SMS to Insight<br><span class="gradient">in Seconds</span></h2>
+    <p class="section-desc reveal delay-2" style="text-align:center;margin:0 auto 60px">Eight seamless steps, all happening on your device, all private, all fast.</p>
+
+    <div class="flow-steps">
+      <div class="flow-step reveal delay-1">
+        <div class="step-num">01</div>
+        <div class="step-icon">📩</div>
+        <div class="step-title">SMS Received</div>
+        <div class="step-desc">Bank/UPI sends transaction SMS to your phone</div>
+      </div>
+      <div class="flow-step reveal delay-2">
+        <div class="step-num">02</div>
+        <div class="step-icon">🔍</div>
+        <div class="step-title">Parser Extracts</div>
+        <div class="step-desc">SMSParser pulls amount, merchant, type, and balance</div>
+      </div>
+      <div class="flow-step reveal delay-3">
+        <div class="step-num">03</div>
+        <div class="step-icon">🤖</div>
+        <div class="step-title">AI Categorizes</div>
+        <div class="step-desc">On-device LLM suggests category + confidence score</div>
+      </div>
+      <div class="flow-step reveal delay-4">
+        <div class="step-num">04</div>
+        <div class="step-icon">✅</div>
+        <div class="step-title">User Confirms</div>
+        <div class="step-desc">You confirm or override — AI never auto-saves</div>
+      </div>
+    </div>
+
+    <div class="flow-steps-2" style="margin-top:0">
+      <div class="flow-step-2 reveal delay-1">
+        <div class="step-num-2">05</div>
+        <div class="step-icon">💾</div>
+        <div class="step-title">Saved Locally</div>
+        <div class="step-desc">Transaction stored in local SQLite database</div>
+      </div>
+      <div class="flow-step-2 reveal delay-2">
+        <div class="step-num-2">06</div>
+        <div class="step-icon">📊</div>
+        <div class="step-title">Dashboard Updates</div>
+        <div class="step-desc">Spending data & financial health score refresh</div>
+      </div>
+      <div class="flow-step-2 reveal delay-3">
+        <div class="step-num-2">07</div>
+        <div class="step-icon">🎙️</div>
+        <div class="step-title">Ask AI Anything</div>
+        <div class="step-desc">Voice/text chat with on-device Finance AI</div>
+      </div>
+      <div class="flow-step-2 reveal delay-4">
+        <div class="step-num-2">08</div>
+        <div class="step-icon">💡</div>
+        <div class="step-title">Insights Delivered</div>
+        <div class="step-desc">Patterns, projections, and advice — all offline</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section id="cta">
+  <div class="container">
+    <div class="cta-inner">
+      <div class="chip reveal" style="margin:0 auto 24px">
+        <div class="dot"></div>
+        Open Source · HackXtreme
+      </div>
+      <h2 class="reveal delay-1">Your Money.<br><span class="gradient">Your Data. Your Device.</span></h2>
+      <p class="reveal delay-2" style="font-size:17px;color:var(--text-muted);line-height:1.7;margin-top:16px">No cloud. No compromise. No exceptions. SpendAI is 100% open source — built at HackXtreme hackathon to prove that AI and privacy can coexist.</p>
+
+      <div class="cta-stats">
+        <div class="cta-stat reveal delay-1">
+          <span class="cs-num" data-count="340">0</span>
+          <span class="cs-lbl">MB AI Model Size</span>
+        </div>
+        <div class="cta-stat reveal delay-2">
+          <span class="cs-num" data-count-suffix="%">100%</span>
+          <span class="cs-lbl">On-Device Processing</span>
+        </div>
+        <div class="cta-stat reveal delay-3">
+          <span class="cs-num">0</span>
+          <span class="cs-lbl">Cloud API Calls</span>
+        </div>
+        <div class="cta-stat reveal delay-4">
+          <span class="cs-num" data-count="79">0</span>
+          <span class="cs-lbl">Financial Health Score</span>
+        </div>
+      </div>
+
+      <div class="cta-btns reveal delay-2">
+        <a href="https://github.com/KS-Mohit/SpendAI" target="_blank" class="btn-primary">
+          ⭐ Star on GitHub
+        </a>
+        <a href="https://github.com/KS-Mohit/SpendAI" target="_blank" class="github-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+          View Source Code
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo">SpendAI</div>
+      <div class="footer-hackathon">🏆 HackXtreme Hackathon</div>
+      <div class="footer-links">
+        <a href="https://github.com/KS-Mohit/SpendAI" target="_blank">GitHub</a>
+        <a href="#features">Features</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#how-it-works">How It Works</a>
+      </div>
+      <div class="footer-copy">
+        © 2025 SpendAI · Built by KS-Mohit · Open Source · github.com/KS-Mohit/SpendAI
+        <br>Your financial data never leaves your device. Privacy by architecture, not policy.
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ---- CURSOR ----
+const cur = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx=window.innerWidth/2, my=window.innerHeight/2;
+let rx=mx, ry=my;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; });
+function animCursor() {
+  cur.style.left = mx+'px'; cur.style.top = my+'px';
+  rx += (mx-rx)*0.14; ry += (my-ry)*0.14;
+  ring.style.left = rx+'px'; ring.style.top = ry+'px';
+  requestAnimationFrame(animCursor);
+}
+animCursor();
+
+// ---- SCROLL PROGRESS ----
+const prog = document.getElementById('progress');
+window.addEventListener('scroll', () => {
+  const s = document.documentElement.scrollTop;
+  const h = document.documentElement.scrollHeight - window.innerHeight;
+  prog.style.transform = `scaleX(${s/h})`;
+}, {passive:true});
+
+// ---- NAV SCROLL ----
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 60);
+}, {passive:true});
+
+// ---- INTERSECTION OBSERVER ----
+const revealEls = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+revealEls.forEach(el => io.observe(el));
+
+// ---- COUNTER ANIMATION ----
+function animateCount(el, target, duration=1600) {
+  let start = null;
+  const suffix = el.dataset.countSuffix || '';
+  const step = ts => {
+    if (!start) start = ts;
+    const p = Math.min((ts-start)/duration, 1);
+    const ease = 1 - Math.pow(1-p, 3);
+    el.textContent = Math.round(ease * target) + suffix;
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+const countEls = document.querySelectorAll('[data-count]');
+const countIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      animateCount(e.target, parseInt(e.target.dataset.count));
+      countIO.unobserve(e.target);
+    }
+  });
+}, {threshold:0.5});
+countEls.forEach(el => countIO.observe(el));
+
+// ---- STACK BAR ANIMATION ----
+const bars = document.querySelectorAll('.sc-bar-fill');
+const barIO = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.width = e.target.dataset.width + '%';
+      barIO.unobserve(e.target);
+    }
+  });
+}, {threshold:0.5});
+bars.forEach(b => barIO.observe(b));
+
+// ---- PHONE SCREEN AUTO-CYCLE ----
+let currentScreen = 0;
+const screens = document.querySelectorAll('.screen-slide');
+const dots = document.querySelectorAll('.phone-dot');
+function setScreen(idx) {
+  screens[currentScreen].classList.remove('active');
+  dots[currentScreen].classList.remove('active');
+  currentScreen = idx;
+  screens[currentScreen].classList.add('active');
+  dots[currentScreen].classList.add('active');
+}
+setInterval(() => {
+  setScreen((currentScreen + 1) % screens.length);
+}, 3500);
+window.setScreen = setScreen;
+
+// ---- FEATURES INTERACTION ----
+const featureData = [
+  {
+    icon:'🤖', title:'100% On-Device AI',
+    desc:'LFM2-350M runs entirely on your phone using llama.cpp. No internet required after the initial 340MB one-time setup. Your financial data never leaves your device — not even for inference.',
+    m1:'340MB', m2:'0 Cloud', lbl1:'Total AI footprint', lbl2:'Cloud API calls'
+  },
+  {
+    icon:'📩', title:'Auto SMS Parsing',
+    desc:'Regex-based parser detects Bank Debit/Credit, UPI, Credit Card, and Wallet SMS in real-time. Extracts 7 fields: amount, type, merchant, account, balance, reference, and timestamp — zero network calls.',
+    m1:'7 Fields', m2:'4 SMS Types', lbl1:'Extracted per txn', lbl2:'SMS types parsed'
+  },
+  {
+    icon:'🎙️', title:'Voice Assistant',
+    desc:'Speak financial questions and get spoken answers using Whisper STT and Piper TTS, both running on-device. Full voice mode works completely offline — just ask, and SpendAI answers.',
+    m1:'100%', m2:'Offline', lbl1:'On-device', lbl2:'Voice capability'
+  },
+  {
+    icon:'❤️', title:'Financial Health Score',
+    desc:'A dynamic 0–100 score calculated from your spending patterns and budget adherence. Updated in real-time as transactions are recorded. See your financial wellbeing at a single glance.',
+    m1:'0–100', m2:'Real-time', lbl1:'Score range', lbl2:'Updates'
+  },
+  {
+    icon:'🎯', title:'Smart Budget Tracking',
+    desc:'Set per-category budgets with visual progress bars. Overage warnings turn red when you\'re approaching your limit. Weekly and monthly charts with month-end spending predictions.',
+    m1:'Per-Cat', m2:'Predictive', lbl1:'Budget tracking', lbl2:'Month-end forecast'
+  },
+  {
+    icon:'⚡', title:'Smart Saver — Impulse Detection',
+    desc:'Detects late-night and impulse transactions. Identifies your personal danger windows — not just midnight, but YOUR specific patterns. Weekly AI report every Monday with actionable tips.',
+    m1:'Weekly', m2:'Personal', lbl1:'AI reports', lbl2:'Pattern detection'
+  }
+];
+const items = document.querySelectorAll('.feature-item');
+const fvIcon=document.getElementById('fvIcon'), fvTitle=document.getElementById('fvTitle');
+const fvDesc=document.getElementById('fvDesc'), fvM1=document.getElementById('fvM1'), fvM2=document.getElementById('fvM2');
+const fvCard=document.getElementById('featureCard');
+items.forEach((item, i) => {
+  item.addEventListener('click', () => {
+    items.forEach(x => x.classList.remove('active'));
+    item.classList.add('active');
+    const d = featureData[i];
+    fvCard.style.opacity='0'; fvCard.style.transform='translateY(10px)';
+    setTimeout(() => {
+      fvIcon.textContent = d.icon; fvTitle.textContent = d.title; fvDesc.textContent = d.desc;
+      fvM1.textContent = d.m1; fvM2.textContent = d.m2;
+      document.querySelectorAll('.fv-metric .lbl')[0].textContent = d.lbl1;
+      document.querySelectorAll('.fv-metric .lbl')[1].textContent = d.lbl2;
+      fvCard.style.opacity='1'; fvCard.style.transform='translateY(0)';
+    }, 150);
+    fvCard.style.transition = 'opacity .3s,transform .3s';
+  });
+});
+
+// ---- PARALLAX ----
+let scrollY = 0;
+window.addEventListener('scroll', () => { scrollY = window.scrollY; }, {passive:true});
+function parallax() {
+  document.querySelectorAll('.parallax-slow').forEach(el => {
+    el.style.transform = `translateY(${scrollY * 0.08}px)`;
+  });
+  requestAnimationFrame(parallax);
+}
+parallax();
+
+// ---- SMOOTH HOVER 3D TILT on cards ----
+document.querySelectorAll('.stack-card, .priv-card, .saver-card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    card.style.transform = `translateY(-4px) rotateY(${x*6}deg) rotateX(${-y*4}deg)`;
+    card.style.transition = 'transform 0s';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+    card.style.transition = 'transform .4s ease';
+  });
+});
+</script>
+</body>
+</html>
